@@ -81,15 +81,12 @@ function App() {
             onSubmit={generateAnswer}
             className="w-full md:w-2/3 lg:w-1/2 xl:w-1/3 text-center rounded-lg shadow-2xl bg-gray-900 py-8 px-6 transition-all duration-500 transform hover:scale-105"
           >
-            <a
-              href="https://github.com/codeaashu/Helpmate-AI"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+
+
               <h1 className="text-4xl font-bold text-blue-400 mb-4 animate-bounce">
-                Helpmate AI
+                Bestfriend AI
               </h1>
-            </a>
+
             <div className="relative w-full">
               <textarea
                 required
