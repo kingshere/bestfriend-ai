@@ -14,8 +14,8 @@ Clean, intuitive UI/UX
 
 ## TECH STACK:
 
-## Frontend: React, Tailwind CSS, Vite
-## API Integration: Google Gemini
-## Tools: React Query, Git
-## Getting Started
+Frontend: React, Tailwind CSS, Vite
+API Integration: Google Gemini
+Tools: React Query, Git
+Getting Started
 
