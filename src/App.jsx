@@ -92,6 +92,8 @@ function App() {
         
         if (error.response.status === 403) {
           setAnswer("API key error: Please check your API key or quota limits.");
+        } else if (error.response.status === 400 && error.response.data.error?.message?.includes("API key expired")) {
+          setAnswer("API key expired: Your Gemini API key has expired. Please renew your API key.");
         } else {
           setAnswer(`Error ${error.response.status}: ${error.response.data.error?.message || "Something went wrong. Please try again!"}`);
         }

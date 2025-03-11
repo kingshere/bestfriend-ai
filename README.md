@@ -1,24 +1,18 @@
-## Bestfriend AI
-Your AI companion for instant answers and intelligent conversations.
+# Bestfriend AI
 
-## About
-Bestfriend AI is a conversational chatbot web app built to provide accurate, real-time responses to any question. It leverages advanced AI models for natural language understanding, text summarization, and contextual question-answering, delivered through a sleek, user-friendly interface.
+A conversational AI assistant powered by Google's Gemini API.
+
+## Screenshot
+
+![Bestfriend AI Screenshot](./screenshots/ok.png)
 
 ## Features
 
-Conversational AI with Google Gemini API
-Text summarization and detailed question-answering
-Responsive design for all devices
-Clean, intuitive UI/UX
-
-
-## TECH STACK:
-
-Frontend: React, Tailwind CSS, Vite
-
-API Integration: Google Gemini
-
-Tools: React Query, Git
+- Natural language conversations with AI
+- Voice input capability
+- Markdown rendering for responses
+- Social media sharing
+- Modern green-blue UI theme
 
 
 
