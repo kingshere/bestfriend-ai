@@ -17,7 +17,7 @@ const ShareButtons = ({ answer }) => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "Helpmate AI Answer",
+          title: "Bestfriend AI Answer",
           text: answer, // Share the answer text instead of the URL
         });
       } catch (err) {
