@@ -53,22 +53,55 @@ function App() {
     e.preventDefault();
     setAnswer("Loading your answer... \n It might take up to 10 seconds");
     try {
+      // Check if API key exists
+      const apiKey = import.meta.env.VITE_API_GENERATIVE_LANGUAGE_CLIENT;
+      if (!apiKey) {
+        throw new Error("API key is missing. Please check your .env file.");
+      }
+
       const response = await axios({
-        url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${
-          import.meta.env.VITE_API_GENERATIVE_LANGUAGE_CLIENT
-        }`,
+        url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
         method: "post",
         data: {
           contents: [{ parts: [{ text: question }] }],
         },
       });
 
-      setAnswer(
-        response["data"]["candidates"][0]["content"]["parts"][0]["text"]
-      );
+      console.log("API Response:", response.data); // Log the response for debugging
+
+      // More robust response handling
+      if (response.data && 
+          response.data.candidates && 
+          response.data.candidates[0] && 
+          response.data.candidates[0].content && 
+          response.data.candidates[0].content.parts && 
+          response.data.candidates[0].content.parts[0]) {
+        setAnswer(response.data.candidates[0].content.parts[0].text);
+      } else {
+        throw new Error("Unexpected API response structure");
+      }
     } catch (error) {
-      console.log(error);
-      setAnswer("Sorry, Something went wrong. Please try again!");
+      console.error("API Error:", error); // More detailed error logging
+      
+      // More informative error message
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        console.error("Response data:", error.response.data);
+        console.error("Response status:", error.response.status);
+        
+        if (error.response.status === 403) {
+          setAnswer("API key error: Please check your API key or quota limits.");
+        } else {
+          setAnswer(`Error ${error.response.status}: ${error.response.data.error?.message || "Something went wrong. Please try again!"}`);
+        }
+      } else if (error.request) {
+        // The request was made but no response was received
+        setAnswer("Network error: No response received from the API. Please check your internet connection.");
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        setAnswer(`Error: ${error.message}`);
+      }
     }
     setGeneratingAnswer(false);
   }

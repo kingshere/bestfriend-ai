@@ -2,12 +2,20 @@ import React from "react";
 import { FaTwitter, FaFacebook, FaLinkedin, FaCopy } from "react-icons/fa";
 
 function ShareButtons({ answer }) {
-  const shareText = `Check out this AI response: ${answer.substring(0, 100)}...`;
+  // Add a check to ensure answer is a valid string
+  const validAnswer = answer && typeof answer === 'string' ? answer : '';
+  const shareText = `Check out this AI response: ${validAnswer.substring(0, 100)}...`;
   const encodedText = encodeURIComponent(shareText);
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(answer);
-    alert("Answer copied to clipboard!");
+    navigator.clipboard.writeText(validAnswer)
+      .then(() => {
+        alert("Answer copied to clipboard!");
+      })
+      .catch(err => {
+        console.error('Failed to copy: ', err);
+        alert("Failed to copy to clipboard. Please try again.");
+      });
   };
 
   return (
