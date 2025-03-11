@@ -75,22 +75,20 @@ function App() {
 
   return (
     <>
-      <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-black h-screen p-6 flex flex-col justify-center items-center text-white">
-        <div className=" flex flex-col items-center overflow-y-auto  w-full overflow-x-hidden">
+      <div className="bg-gradient-to-r from-emerald-900 via-teal-800 to-blue-900 h-screen p-6 flex flex-col justify-center items-center text-white">
+        <div className="flex flex-col items-center overflow-y-auto w-full overflow-x-hidden">
           <form
             onSubmit={generateAnswer}
-            className="w-full md:w-2/3 lg:w-1/2 xl:w-1/3 text-center rounded-lg shadow-2xl bg-gray-900 py-8 px-6 transition-all duration-500 transform hover:scale-105"
+            className="w-full md:w-2/3 lg:w-1/2 xl:w-1/3 text-center rounded-lg shadow-2xl bg-teal-900 py-8 px-6 transition-all duration-500 transform hover:scale-105"
           >
-
-
-              <h1 className="text-4xl font-bold text-blue-400 mb-4 animate-bounce">
+              <h1 className="text-4xl font-bold text-emerald-300 mb-4 animate-pulse">
                 Bestfriend AI
               </h1>
 
             <div className="relative w-full">
               <textarea
                 required
-                className="border border-gray-700 bg-gray-800 text-white rounded-lg w-full my-3 min-h-fit p-4 transition-all duration-300 focus:border-blue-500 focus:shadow-lg focus:bg-gray-700"
+                className="border border-teal-700 bg-teal-800 text-white rounded-lg w-full my-3 min-h-fit p-4 transition-all duration-300 focus:border-emerald-500 focus:shadow-lg focus:bg-teal-700"
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 placeholder="Take help with your AI mate!"
@@ -100,7 +98,7 @@ function App() {
                   type="button"
                   onClick={toggleListening}
                   className={`absolute right-3 top-1/2 transform -translate-y-1/2 p-2 rounded-full ${
-                    isListening ? "bg-red-500" : "bg-blue-500"
+                    isListening ? "bg-red-500" : "bg-emerald-500"
                   } hover:opacity-80 transition-all duration-300`}
                 >
                   <svg
@@ -122,7 +120,7 @@ function App() {
             </div>
             <button
               type="submit"
-              className={`bg-blue-600 text-white py-3 px-6 rounded-md shadow-md hover:bg-blue-700 transition-all duration-300 ${
+              className={`bg-emerald-600 text-white py-3 px-6 rounded-md shadow-md hover:bg-emerald-700 transition-all duration-300 ${
                 generatingAnswer ? "opacity-50 cursor-not-allowed" : ""
               }`}
               disabled={generatingAnswer}
@@ -132,7 +130,7 @@ function App() {
           </form>
           {/* Conditional Rendering for ReactMarkdown */}
           {answer && (
-            <div className="w-full md:w-2/3 lg:w-1/3 xl:w-1/3 text-center rounded-lg bg-gray-900 my-6 shadow-2xl transition-all duration-500 transform hover:scale-105">
+            <div className="w-full md:w-2/3 lg:w-1/3 xl:w-1/3 text-center rounded-lg bg-teal-900 my-6 shadow-2xl transition-all duration-500 transform hover:scale-105">
               <div className="p-4">
                 <ReactMarkdown>{answer}</ReactMarkdown>
                 <ShareButtons answer={answer} />
