@@ -5,6 +5,7 @@ A conversational AI assistant powered by Google's Gemini API.
 ## Screenshot
 
 ![Bestfriend AI Screenshot](./screenshots/ok.png)
+![Bestfriend AI Screenshot](./screenshots/pk.png)
 
 ## Features
 
