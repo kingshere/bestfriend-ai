@@ -60,7 +60,7 @@ function App() {
       }
 
       const response = await axios({
-        url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
+        url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key=${apiKey}`,
         method: "post",
         data: {
           contents: [{ parts: [{ text: question }] }],
@@ -94,6 +94,8 @@ function App() {
           setAnswer("API key error: Please check your API key or quota limits.");
         } else if (error.response.status === 400 && error.response.data.error?.message?.includes("API key expired")) {
           setAnswer("API key expired: Your Gemini API key has expired. Please renew your API key.");
+        } else if (error.response.status === 404) {
+          setAnswer("Model not found: The AI model specified in the request could not be found. This might be due to an API version mismatch or the model being unavailable.");
         } else {
           setAnswer(`Error ${error.response.status}: ${error.response.data.error?.message || "Something went wrong. Please try again!"}`);
         }
