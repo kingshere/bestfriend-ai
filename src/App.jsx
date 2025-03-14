@@ -109,7 +109,7 @@ function App() {
         <div className="flex flex-col items-center overflow-y-auto w-full overflow-x-hidden">
           <form
             onSubmit={generateAnswer}
-            className="w-full md:w-3/4 lg:w-2/3 xl:w-1/2 text-center rounded-lg shadow-2xl bg-teal-900 py-8 px-6 transition-all duration-500 transform hover:scale-105"
+            className="w-full md:w-4/5 lg:w-3/4 xl:w-2/3 text-center rounded-lg shadow-2xl bg-teal-900 py-8 px-6 transition-all duration-500 transform hover:scale-105"
           >
               <h1 className="text-4xl font-bold text-emerald-300 mb-4 animate-pulse">
                 Bestfriend AI
@@ -193,7 +193,7 @@ function App() {
           
           {/* Conditional Rendering for ReactMarkdown */}
           {answer && !isEditing && (
-            <div className="w-full md:w-3/4 lg:w-2/3 xl:w-1/2 text-center rounded-lg bg-teal-900 my-6 shadow-2xl transition-all duration-500 transform hover:scale-105">
+            <div className="w-full md:w-4/5 lg:w-3/4 xl:w-2/3 text-center rounded-lg bg-teal-900 my-6 shadow-2xl transition-all duration-500 transform hover:scale-105">
               <div className="p-4">
                 <ReactMarkdown>{answer}</ReactMarkdown>
                 <ShareButtons answer={answer} />
