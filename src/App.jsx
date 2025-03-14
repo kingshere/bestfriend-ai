@@ -181,13 +181,14 @@ function App() {
                 </div>
               ))}
               
-              {/* Add loader when generating answer */}
+              {/* Improved loader when generating answer */}
               {generatingAnswer && (
-                <div className="my-2 p-4 rounded-lg bg-emerald-700 text-white self-start ml-2 max-w-[80%] flex items-center">
-                  <div className="loader mr-3">
-                    <div className="dot-flashing"></div>
+                <div className="my-2 p-4 rounded-lg bg-emerald-700 text-white self-start ml-2 max-w-[80%]">
+                  <div className="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
                   </div>
-                  <span>Thinking...</span>
                 </div>
               )}
             </div>
