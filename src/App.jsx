@@ -63,61 +63,78 @@ function App() {
     setIsEditing(false);
   };
 
+  // Let's create a chat instance once and reuse it
+  const [chatInstance, setChatInstance] = useState(null);
+  
+  // Initialize chat instance when API key is available
+  useEffect(() => {
+    const initializeChat = async () => {
+      try {
+        const apiKey = import.meta.env.VITE_API_GENERATIVE_LANGUAGE_CLIENT;
+        if (apiKey) {
+          const genAI = new GoogleGenerativeAI(apiKey);
+          const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+          const chat = model.startChat({
+            generationConfig: {
+              temperature: 0.7,
+              topK: 40,
+              topP: 0.95,
+              maxOutputTokens: 1024,
+            },
+          });
+          setChatInstance(chat);
+        }
+      } catch (error) {
+        console.error("Failed to initialize chat:", error);
+      }
+    };
+    
+    initializeChat();
+  }, []);
+
   async function generateAnswer(e) {
     setGeneratingAnswer(true);
     e.preventDefault();
-    setIsEditing(false); // Reset editing state
+    setIsEditing(false);
+    
+    const prompt = question.trim();
+    if (!prompt) {
+      setGeneratingAnswer(false);
+      return;
+    }
+    
+    // Add user message to chat history immediately
+    const userMessage = { role: "user", parts: [{ text: prompt }] };
+    setChatHistory(prevHistory => [...prevHistory, userMessage]);
     setAnswer("Loading your answer... \n It might take up to 10 seconds");
+    
     try {
-      // Check if API key exists and log it for debugging (remove in production)
-      const apiKey = import.meta.env.VITE_API_GENERATIVE_LANGUAGE_CLIENT;
-      console.log("API Key exists:", !!apiKey); // Logs true if key exists, false otherwise
-      
-      if (!apiKey) {
-        throw new Error("API key is missing. Please check your .env file.");
+      if (!chatInstance) {
+        throw new Error("Chat not initialized. Please refresh the page.");
       }
-
-      // Initialize the Google Generative AI with your API key
-      const genAI = new GoogleGenerativeAI(apiKey);
       
-      // Create a chat model
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
-      const chat = model.startChat({
-        history: chatHistory,
-        generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 1024,
-        },
-      });
-      
-      // Generate content using the model with chat history
-      const prompt = question.trim();
-      const result = await chat.sendMessage(prompt);
-      
-      // Get the response text
+      // Send message to API
+      const result = await chatInstance.sendMessage(prompt);
       const response = await result.response;
       const text = response.text();
       
-      console.log("API Response:", text); // Log the response for debugging
+      console.log("API Response:", text);
       
-      // Update chat history with the new exchange
-      setChatHistory(prevHistory => [
-        ...prevHistory,
-        { role: "user", parts: [{ text: prompt }] },
-        { role: "model", parts: [{ text: text }] }
-      ]);
+      // Add AI response to chat history
+      const aiMessage = { role: "model", parts: [{ text: text }] };
+      setChatHistory(prevHistory => [...prevHistory, aiMessage]);
       
       setAnswer(text);
-      setQuestion(""); // Clear the input for the next message
+      setQuestion(""); // Clear input for next message
     } catch (error) {
-      // More detailed error logging
       console.error("API Error:", error);
       
-      // Handle different types of errors with more specific messages
+      // Remove the user message we just added if there was an error
+      setChatHistory(prevHistory => prevHistory.slice(0, -1));
+      
       setAnswer(`Error: ${error.message || "Something went wrong. Please try again!"}`);
     }
+    
     setGeneratingAnswer(false);
   }
 
@@ -126,6 +143,22 @@ function App() {
     setChatHistory([]);
     setAnswer("");
     setQuestion("");
+    
+    // Reinitialize chat instance
+    const apiKey = import.meta.env.VITE_API_GENERATIVE_LANGUAGE_CLIENT;
+    if (apiKey) {
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+      const chat = model.startChat({
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 1024,
+        },
+      });
+      setChatInstance(chat);
+    }
   };
 
   return (
@@ -134,14 +167,14 @@ function App() {
         <div className="flex flex-col items-center overflow-y-auto w-full overflow-x-hidden">
           {/* Display conversation history */}
           {chatHistory.length > 0 && (
-            <div className="w-full md:w-4/5 lg:w-3/4 xl:w-2/3 mb-6">
+            <div className="w-full md:w-4/5 lg:w-3/4 xl:w-2/3 mb-6 flex flex-col">
               {chatHistory.map((message, index) => (
                 <div 
                   key={index} 
                   className={`my-2 p-4 rounded-lg ${
                     message.role === "user" 
-                      ? "bg-teal-800 text-white ml-auto mr-2 max-w-[80%]" 
-                      : "bg-emerald-700 text-white mr-auto ml-2 max-w-[80%]"
+                      ? "bg-teal-800 text-white self-end mr-2 max-w-[80%]" 
+                      : "bg-emerald-700 text-white self-start ml-2 max-w-[80%]"
                   }`}
                 >
                   <ReactMarkdown>{message.parts[0].text}</ReactMarkdown>
