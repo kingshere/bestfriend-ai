@@ -163,13 +163,18 @@ function App() {
 
   return (
     <>
-      <div className="bg-gradient-to-r from-emerald-900 via-teal-800 to-blue-900 min-h-screen p-6 flex flex-col justify-center items-center text-white">
-        {/* Add banner at the top of the website */}
-        <div className="w-full md:w-4/5 lg:w-3/4 xl:w-2/3 mb-8">
-          <h1 className="artistic-header">
-            BESTFRIEND AI
-          </h1>
+      <div className="bg-gradient-to-r from-emerald-900 via-teal-800 to-blue-900 min-h-screen p-6 flex flex-col items-center text-white">
+        {/* Fixed header banner */}
+        <div className="fixed top-0 left-0 right-0 z-10 bg-gradient-to-r from-emerald-900 via-teal-800 to-blue-900 py-4 shadow-lg">
+          <div className="w-full flex justify-center">
+            <h1 className="artistic-header mb-0">
+              BESTFRIEND AI
+            </h1>
+          </div>
         </div>
+        
+        {/* Add padding to account for fixed header */}
+        <div className="w-full pt-28"></div>
         
         <div className="flex flex-col items-center overflow-y-auto w-full overflow-x-hidden">
           {/* Display conversation history */}
