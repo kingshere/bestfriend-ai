@@ -106,7 +106,6 @@ function App() {
     // Add user message to chat history immediately
     const userMessage = { role: "user", parts: [{ text: prompt }] };
     setChatHistory(prevHistory => [...prevHistory, userMessage]);
-    setAnswer("Loading your answer... \n It might take up to 10 seconds");
     
     try {
       if (!chatInstance) {
@@ -124,15 +123,16 @@ function App() {
       const aiMessage = { role: "model", parts: [{ text: text }] };
       setChatHistory(prevHistory => [...prevHistory, aiMessage]);
       
-      setAnswer(text);
       setQuestion(""); // Clear input for next message
     } catch (error) {
       console.error("API Error:", error);
       
-      // Remove the user message we just added if there was an error
-      setChatHistory(prevHistory => prevHistory.slice(0, -1));
-      
-      setAnswer(`Error: ${error.message || "Something went wrong. Please try again!"}`);
+      // Add error message to chat history
+      const errorMessage = { 
+        role: "model", 
+        parts: [{ text: `Error: ${error.message || "Something went wrong. Please try again!"}` }] 
+      };
+      setChatHistory(prevHistory => [...prevHistory, errorMessage]);
     }
     
     setGeneratingAnswer(false);
@@ -180,6 +180,16 @@ function App() {
                   <ReactMarkdown>{message.parts[0].text}</ReactMarkdown>
                 </div>
               ))}
+              
+              {/* Add loader when generating answer */}
+              {generatingAnswer && (
+                <div className="my-2 p-4 rounded-lg bg-emerald-700 text-white self-start ml-2 max-w-[80%] flex items-center">
+                  <div className="loader mr-3">
+                    <div className="dot-flashing"></div>
+                  </div>
+                  <span>Thinking...</span>
+                </div>
+              )}
             </div>
           )}
           
