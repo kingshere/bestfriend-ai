@@ -6,15 +6,8 @@ import ShareButtons from "./components/ShareButtons";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import SidePanel from "./components/SidePanel";
 // Import database connection and services
-import connectDB from "./utils/db";
-import { 
-  getConversations, 
-  getConversationById, 
-  createConversation, 
-  updateConversation, 
-  deleteConversation, 
-  addMessageToConversation 
-} from "./services/conversationService";
+
+
 
 function App() {
   // State variables
@@ -479,12 +472,8 @@ function App() {
                 </div>
               </form>
               
-              {/* Database connection status */}
-              {!dbConnected && (
-                <div className="mt-4 p-2 bg-yellow-600 text-white rounded-md text-sm">
-                  Using local storage mode. MongoDB connection failed.
-                </div>
-              )}
+              {/* Database connection status - Removing this section */}
+              {/* Removed the yellow warning bar about MongoDB connection */}
               
               {/* Share buttons */}
               {chatHistory.length > 0 && (
