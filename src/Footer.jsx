@@ -4,7 +4,7 @@ function Footer() {
   return (
     <footer className="text-center py-4 text-emerald-300 mt-auto">
       <p>
-        Made with 💚 by{" "}
+        {" "}
         <a
           href="https://github.com/kingshere"
           className="text-teal-300 hover:text-emerald-400 transition-colors duration-300"
