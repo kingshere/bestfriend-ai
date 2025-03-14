@@ -11,6 +11,8 @@ function App() {
   const [generatingAnswer, setGeneratingAnswer] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [recognition, setRecognition] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [previousQuestion, setPreviousQuestion] = useState("");
 
   useEffect(() => {
     if ("webkitSpeechRecognition" in window) {
@@ -48,9 +50,22 @@ function App() {
     }
   };
 
+  // New function to handle editing
+  const handleEditMessage = () => {
+    setPreviousQuestion(question);
+    setIsEditing(true);
+  };
+
+  // New function to cancel editing
+  const cancelEdit = () => {
+    setQuestion(previousQuestion);
+    setIsEditing(false);
+  };
+
   async function generateAnswer(e) {
     setGeneratingAnswer(true);
     e.preventDefault();
+    setIsEditing(false); // Reset editing state
     setAnswer("Loading your answer... \n It might take up to 10 seconds");
     try {
       // Check if API key exists and log it for debugging (remove in production)
@@ -94,7 +109,7 @@ function App() {
         <div className="flex flex-col items-center overflow-y-auto w-full overflow-x-hidden">
           <form
             onSubmit={generateAnswer}
-            className="w-full md:w-2/3 lg:w-1/2 xl:w-1/3 text-center rounded-lg shadow-2xl bg-teal-900 py-8 px-6 transition-all duration-500 transform hover:scale-105"
+            className="w-full md:w-3/4 lg:w-2/3 xl:w-1/2 text-center rounded-lg shadow-2xl bg-teal-900 py-8 px-6 transition-all duration-500 transform hover:scale-105"
           >
               <h1 className="text-4xl font-bold text-emerald-300 mb-4 animate-pulse">
                 Bestfriend AI
@@ -103,7 +118,7 @@ function App() {
             <div className="relative w-full">
               <textarea
                 required
-                className="border border-teal-700 bg-teal-800 text-white rounded-lg w-full my-3 min-h-fit p-4 transition-all duration-300 focus:border-emerald-500 focus:shadow-lg focus:bg-teal-700"
+                className="border border-teal-700 bg-teal-800 text-white rounded-lg w-full my-3 min-h-[120px] p-4 transition-all duration-300 focus:border-emerald-500 focus:shadow-lg focus:bg-teal-700"
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 placeholder="Take help with your AI mate!"
@@ -133,19 +148,52 @@ function App() {
                 </button>
               )}
             </div>
-            <button
-              type="submit"
-              className={`bg-emerald-600 text-white py-3 px-6 rounded-md shadow-md hover:bg-emerald-700 transition-all duration-300 ${
-                generatingAnswer ? "opacity-50 cursor-not-allowed" : ""
-              }`}
-              disabled={generatingAnswer}
-            >
-              Generate answer
-            </button>
+            
+            <div className="flex justify-center space-x-4 mt-4">
+              {isEditing ? (
+                <>
+                  <button
+                    type="submit"
+                    className="bg-emerald-600 text-white py-3 px-6 rounded-md shadow-md hover:bg-emerald-700 transition-all duration-300"
+                  >
+                    Save & Generate
+                  </button>
+                  <button
+                    type="button"
+                    onClick={cancelEdit}
+                    className="bg-gray-600 text-white py-3 px-6 rounded-md shadow-md hover:bg-gray-700 transition-all duration-300"
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="submit"
+                    className={`bg-emerald-600 text-white py-3 px-6 rounded-md shadow-md hover:bg-emerald-700 transition-all duration-300 ${
+                      generatingAnswer ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
+                    disabled={generatingAnswer}
+                  >
+                    Generate answer
+                  </button>
+                  {answer && (
+                    <button
+                      type="button"
+                      onClick={handleEditMessage}
+                      className="bg-blue-600 text-white py-3 px-6 rounded-md shadow-md hover:bg-blue-700 transition-all duration-300"
+                    >
+                      Edit message
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
           </form>
+          
           {/* Conditional Rendering for ReactMarkdown */}
-          {answer && (
-            <div className="w-full md:w-2/3 lg:w-1/3 xl:w-1/3 text-center rounded-lg bg-teal-900 my-6 shadow-2xl transition-all duration-500 transform hover:scale-105">
+          {answer && !isEditing && (
+            <div className="w-full md:w-3/4 lg:w-2/3 xl:w-1/2 text-center rounded-lg bg-teal-900 my-6 shadow-2xl transition-all duration-500 transform hover:scale-105">
               <div className="p-4">
                 <ReactMarkdown>{answer}</ReactMarkdown>
                 <ShareButtons answer={answer} />
