@@ -12,6 +12,7 @@ A conversational AI assistant powered by Google's Gemini API.
 - Voice input capability
 - Edit conversations
 - Continued Conversation feature
+- Chats stored in Database - MongoDB
 - Markdown rendering for responses
 - Social media sharing
 - Modern green-blue UI theme
