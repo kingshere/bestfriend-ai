@@ -5,8 +5,19 @@ import Footer from "./Footer";
 import ShareButtons from "./components/ShareButtons";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import SidePanel from "./components/SidePanel";
+// Import database connection and services
+import connectDB from "./utils/db";
+import { 
+  getConversations, 
+  getConversationById, 
+  createConversation, 
+  updateConversation, 
+  deleteConversation, 
+  addMessageToConversation 
+} from "./services/conversationService";
 
 function App() {
+  // State variables
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [generatingAnswer, setGeneratingAnswer] = useState(false);
@@ -15,70 +26,199 @@ function App() {
   const [isEditing, setIsEditing] = useState(false);
   const [previousQuestion, setPreviousQuestion] = useState("");
   const [chatHistory, setChatHistory] = useState([]);
-  // Add state for previous conversations and active conversation ID
   const [previousConversations, setPreviousConversations] = useState([]);
   const [activeConversationId, setActiveConversationId] = useState("current");
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
+  // Database connection state
+  const [dbConnected, setDbConnected] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [chatInstance, setChatInstance] = useState(null);
 
-  // Load previous conversations from localStorage on component mount
+  // Connect to MongoDB on component mount
   useEffect(() => {
-    const savedConversations = localStorage.getItem("previousConversations");
-    if (savedConversations) {
-      setPreviousConversations(JSON.parse(savedConversations));
-    }
+    const initDB = async () => {
+      try {
+        await connectDB();
+        setDbConnected(true);
+        console.log("Connected to MongoDB");
+      } catch (error) {
+        console.error("Failed to connect to MongoDB:", error);
+        // Fallback to localStorage if MongoDB connection fails
+        const savedConversations = localStorage.getItem("previousConversations");
+        if (savedConversations) {
+          setPreviousConversations(JSON.parse(savedConversations));
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    initDB();
   }, []);
 
-  // Save previous conversations to localStorage whenever they change
+  // Load conversations from MongoDB
+  useEffect(() => {
+    const loadConversations = async () => {
+      if (!dbConnected) return;
+      
+      setIsLoading(true);
+      try {
+        const conversations = await getConversations();
+        setPreviousConversations(conversations.map(conv => ({
+          id: conv._id,
+          title: conv.title,
+          timestamp: conv.updatedAt,
+        })));
+      } catch (error) {
+        console.error("Failed to load conversations:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    if (dbConnected) {
+      loadConversations();
+    }
+  }, [dbConnected]);
+
+  // Save to localStorage as backup
   useEffect(() => {
     localStorage.setItem("previousConversations", JSON.stringify(previousConversations));
   }, [previousConversations]);
 
+  // Speech recognition setup
+  useEffect(() => {
+    if ("webkitSpeechRecognition" in window) {
+      const recognition = new webkitSpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = "en-US";
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setQuestion(transcript);
+        setIsListening(false);
+      };
+
+      recognition.onerror = (event) => {
+        console.error("Speech recognition error:", event.error);
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      setRecognition(recognition);
+    }
+  }, []);
+
+  // Initialize chat instance
+  useEffect(() => {
+    const initializeChat = async () => {
+      try {
+        const apiKey = import.meta.env.VITE_API_GENERATIVE_LANGUAGE_CLIENT;
+        if (apiKey) {
+          const genAI = new GoogleGenerativeAI(apiKey);
+          const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+          const chat = model.startChat({
+            generationConfig: {
+              temperature: 0.7,
+              topK: 40,
+              topP: 0.95,
+              maxOutputTokens: 1024,
+            },
+          });
+          setChatInstance(chat);
+        }
+      } catch (error) {
+        console.error("Failed to initialize chat:", error);
+      }
+    };
+    
+    initializeChat();
+  }, []);
+
   // Function to load a previous conversation
-  const loadConversation = (conversationId) => {
+  const loadConversation = async (conversationId) => {
     if (conversationId === "current") {
       setChatHistory([]);
       setActiveConversationId("current");
       return;
     }
     
-    const conversation = previousConversations.find(conv => conv.id === conversationId);
-    if (conversation) {
-      setChatHistory(conversation.messages);
-      setActiveConversationId(conversationId);
-      
-      // Close side panel on mobile after selection
-      if (window.innerWidth < 768) {
-        setIsSidePanelOpen(false);
+    try {
+      setIsLoading(true);
+      const conversation = await getConversationById(conversationId);
+      if (conversation) {
+        setChatHistory(conversation.messages);
+        setActiveConversationId(conversationId);
+        
+        // Close side panel on mobile after selection
+        if (window.innerWidth < 768) {
+          setIsSidePanelOpen(false);
+        }
       }
+    } catch (error) {
+      console.error("Failed to load conversation:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // Function to delete a conversation
-  const deleteConversation = (id, e) => {
+  const deleteConversationHandler = async (id, e) => {
     e.stopPropagation(); // Prevent triggering the parent click event
-    setPreviousConversations(prev => prev.filter(conv => conv.id !== id));
     
-    // If the active conversation is deleted, switch to current
-    if (activeConversationId === id) {
-      setChatHistory([]);
-      setActiveConversationId("current");
+    try {
+      await deleteConversation(id);
+      setPreviousConversations(prev => prev.filter(conv => conv.id !== id));
+      
+      // If the active conversation is deleted, switch to current
+      if (activeConversationId === id) {
+        setChatHistory([]);
+        setActiveConversationId("current");
+      }
+    } catch (error) {
+      console.error("Failed to delete conversation:", error);
+      // Still remove from UI even if DB delete fails
+      setPreviousConversations(prev => prev.filter(conv => conv.id !== id));
     }
   };
 
   // Function to clear conversation history and save current conversation
-  const clearConversation = () => {
+  const clearConversation = async () => {
     // Only save if there are messages
     if (chatHistory.length > 0) {
-      // Create a new conversation object
-      const newConversation = {
-        id: Date.now().toString(),
-        title: chatHistory[0].parts[0].text.slice(0, 30) + "...",
-        timestamp: new Date().toISOString(),
-        messages: chatHistory
-      };
-      
-      // Add to previous conversations
-      setPreviousConversations(prev => [newConversation, ...prev]);
+      try {
+        // Create a new conversation object
+        const newConversation = {
+          title: chatHistory[0].parts[0].text.slice(0, 30) + "...",
+          messages: chatHistory
+        };
+        
+        // Save to MongoDB
+        const savedConversation = await createConversation(newConversation);
+        
+        // Add to previous conversations
+        setPreviousConversations(prev => [{
+          id: savedConversation._id,
+          title: savedConversation.title,
+          timestamp: savedConversation.createdAt
+        }, ...prev]);
+      } catch (error) {
+        console.error("Failed to save conversation:", error);
+        
+        // Fallback to local storage if MongoDB save fails
+        const newConversation = {
+          id: Date.now().toString(),
+          title: chatHistory[0].parts[0].text.slice(0, 30) + "...",
+          timestamp: new Date().toISOString(),
+          messages: chatHistory
+        };
+        
+        setPreviousConversations(prev => [newConversation, ...prev]);
+      }
     }
     
     // Clear current chat
@@ -109,6 +249,7 @@ function App() {
     setIsSidePanelOpen(!isSidePanelOpen);
   };
 
+  // Toggle speech recognition
   const toggleListening = () => {
     if (isListening) {
       recognition.stop();
@@ -119,48 +260,19 @@ function App() {
     }
   };
 
-  // New function to handle editing
+  // Handle editing message
   const handleEditMessage = () => {
     setPreviousQuestion(question);
     setIsEditing(true);
   };
 
-  // New function to cancel editing
+  // Cancel editing
   const cancelEdit = () => {
     setQuestion(previousQuestion);
     setIsEditing(false);
   };
 
-  // Toggle side panel - removed duplicate declaration
-  
-  // Chat instance setup
-  const [chatInstance, setChatInstance] = useState(null);
-  
-  useEffect(() => {
-    const initializeChat = async () => {
-      try {
-        const apiKey = import.meta.env.VITE_API_GENERATIVE_LANGUAGE_CLIENT;
-        if (apiKey) {
-          const genAI = new GoogleGenerativeAI(apiKey);
-          const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
-          const chat = model.startChat({
-            generationConfig: {
-              temperature: 0.7,
-              topK: 40,
-              topP: 0.95,
-              maxOutputTokens: 1024,
-            },
-          });
-          setChatInstance(chat);
-        }
-      } catch (error) {
-        console.error("Failed to initialize chat:", error);
-      }
-    };
-    
-    initializeChat();
-  }, []);
-
+  // Generate answer from AI
   async function generateAnswer(e) {
     setGeneratingAnswer(true);
     e.preventDefault();
@@ -190,7 +302,17 @@ function App() {
       
       // Add AI response to chat history
       const aiMessage = { role: "model", parts: [{ text: text }] };
-      setChatHistory(prevHistory => [...prevHistory, aiMessage]);
+      setChatHistory(prevHistory => {
+        const newHistory = [...prevHistory, aiMessage];
+        
+        // If this is an existing conversation, update it in the database
+        if (activeConversationId !== "current" && dbConnected) {
+          updateConversation(activeConversationId, { messages: newHistory })
+            .catch(err => console.error("Failed to update conversation:", err));
+        }
+        
+        return newHistory;
+      });
       
       setQuestion(""); // Clear input for next message
     } catch (error) {
@@ -238,7 +360,8 @@ function App() {
             previousConversations={previousConversations}
             activeConversationId={activeConversationId}
             loadConversation={loadConversation}
-            deleteConversation={deleteConversation}
+            deleteConversation={deleteConversationHandler}
+            isLoading={isLoading}
           />
           
           {/* Main content */}
@@ -311,53 +434,64 @@ function App() {
                   )}
                 </div>
                 
-                <div className="flex justify-center space-x-4 mt-4">
+                <div className="flex justify-between items-center mt-4">
                   {isEditing ? (
-                    <>
-                      <button
-                        type="submit"
-                        className="bg-emerald-600 text-white py-3 px-6 rounded-md shadow-md hover:bg-emerald-700 transition-all duration-300"
-                      >
-                        Save & Generate
-                      </button>
+                    <div className="flex space-x-2">
                       <button
                         type="button"
                         onClick={cancelEdit}
-                        className="bg-gray-600 text-white py-3 px-6 rounded-md shadow-md hover:bg-gray-700 transition-all duration-300"
+                        className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
                       >
                         Cancel
                       </button>
-                    </>
-                  ) : (
-                    <>
                       <button
                         type="submit"
-                        className={`bg-emerald-600 text-white py-3 px-6 rounded-md shadow-md hover:bg-emerald-700 transition-all duration-300 ${
-                          generatingAnswer ? "opacity-50 cursor-not-allowed" : ""
-                        }`}
+                        className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
+                      >
+                        Update
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex space-x-2">
+                      <button
+                        type="button"
+                        onClick={clearConversation}
+                        className="px-4 py-2 bg-teal-700 text-white rounded-md hover:bg-teal-800 transition-colors"
+                        disabled={chatHistory.length === 0}
+                      >
+                        New Chat
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
                         disabled={generatingAnswer}
                       >
-                        Send message
+                        {generatingAnswer ? "Generating..." : "Ask"}
                       </button>
-                      {chatHistory.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={clearConversation}
-                          className="bg-red-600 text-white py-3 px-6 rounded-md shadow-md hover:bg-red-700 transition-all duration-300"
-                        >
-                          New conversation
-                        </button>
-                      )}
-                    </>
+                    </div>
                   )}
                 </div>
               </form>
               
-              {/* We don't need the separate answer display anymore since we're showing the conversation history */}
-              <Footer />
+              {/* Database connection status */}
+              {!dbConnected && (
+                <div className="mt-4 p-2 bg-yellow-600 text-white rounded-md text-sm">
+                  Using local storage mode. MongoDB connection failed.
+                </div>
+              )}
+              
+              {/* Share buttons */}
+              {chatHistory.length > 0 && (
+                <div className="mt-6 w-full md:w-4/5 lg:w-3/4 xl:w-2/3">
+                  <ShareButtons conversation={chatHistory} />
+                </div>
+              )}
             </div>
           </div>
         </div>
+        
+        {/* Footer */}
+        <Footer />
       </div>
     </>
   );
