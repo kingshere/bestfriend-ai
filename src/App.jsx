@@ -149,8 +149,12 @@ function App() {
     
     try {
       setIsLoading(true);
+      console.log(`Attempting to load conversation with ID: ${conversationId}`);
+      
       const conversation = await getConversationById(conversationId);
-      if (conversation) {
+      console.log("Loaded conversation:", conversation);
+      
+      if (conversation && conversation.messages) {
         setChatHistory(conversation.messages);
         setActiveConversationId(conversationId);
         
@@ -158,6 +162,8 @@ function App() {
         if (window.innerWidth < 768) {
           setIsSidePanelOpen(false);
         }
+      } else {
+        console.error("Conversation loaded but has no messages or is invalid");
       }
     } catch (error) {
       console.error("Failed to load conversation:", error);

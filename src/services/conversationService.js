@@ -16,10 +16,18 @@ export const getConversations = async (userId = 'anonymous') => {
 // Get a single conversation by ID
 export const getConversationById = async (id) => {
   try {
+    console.log(`Fetching conversation with ID: ${id}`);
     const conversation = await Conversation.findById(id);
+    
+    if (!conversation) {
+      console.error(`No conversation found with ID: ${id}`);
+      return null;
+    }
+    
+    console.log(`Successfully retrieved conversation: ${conversation.title}`);
     return conversation;
   } catch (error) {
-    console.error('Error fetching conversation:', error);
+    console.error(`Error fetching conversation with ID ${id}:`, error);
     throw error;
   }
 };

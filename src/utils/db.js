@@ -2,8 +2,8 @@ import mongoose from 'mongoose';
 
 const connectDB = async () => {
   try {
-    // Change this line to use the correct environment variable name
-    const mongoURI = import.meta.env.MONGODB_URI || process.env.MONGODB_URI;
+    // Make sure we're using the correct environment variable
+    const mongoURI = import.meta.env.VITE_MONGODB_URI;
     
     if (!mongoURI) {
       console.error('MongoDB URI not found in environment variables');
