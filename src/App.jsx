@@ -197,7 +197,7 @@ function App() {
                 className="border border-teal-700 bg-teal-800 text-white rounded-lg w-full my-3 min-h-[120px] p-4 transition-all duration-300 focus:border-emerald-500 focus:shadow-lg focus:bg-teal-700"
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
-                placeholder="Take help with your AI mate!"
+                placeholder="Take help from your AI mate!"
               ></textarea>
               {recognition && (
                 <button
