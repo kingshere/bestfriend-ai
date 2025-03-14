@@ -164,6 +164,13 @@ function App() {
   return (
     <>
       <div className="bg-gradient-to-r from-emerald-900 via-teal-800 to-blue-900 min-h-screen p-6 flex flex-col justify-center items-center text-white">
+        {/* Add banner at the top of the website */}
+        <div className="w-full md:w-4/5 lg:w-3/4 xl:w-2/3 mb-8">
+          <h1 className="artistic-header">
+            BESTFRIEND AI
+          </h1>
+        </div>
+        
         <div className="flex flex-col items-center overflow-y-auto w-full overflow-x-hidden">
           {/* Display conversation history */}
           {chatHistory.length > 0 && (
@@ -198,10 +205,6 @@ function App() {
             onSubmit={generateAnswer}
             className="w-full md:w-4/5 lg:w-3/4 xl:w-2/3 text-center rounded-lg shadow-2xl bg-teal-900 py-8 px-6 transition-all duration-500 transform hover:scale-105"
           >
-              <h1 className="artistic-header">
-                BESTFRIEND AI
-              </h1>
-
             <div className="relative w-full">
               <textarea
                 required
