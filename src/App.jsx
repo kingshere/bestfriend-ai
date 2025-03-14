@@ -13,6 +13,7 @@ function App() {
   const [recognition, setRecognition] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [previousQuestion, setPreviousQuestion] = useState("");
+  const [chatHistory, setChatHistory] = useState([]);
 
   useEffect(() => {
     if ("webkitSpeechRecognition" in window) {
@@ -79,12 +80,21 @@ function App() {
       // Initialize the Google Generative AI with your API key
       const genAI = new GoogleGenerativeAI(apiKey);
       
-      // Try using a different model name
+      // Create a chat model
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+      const chat = model.startChat({
+        history: chatHistory,
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 1024,
+        },
+      });
       
-      // Generate content using the model with simpler approach
+      // Generate content using the model with chat history
       const prompt = question.trim();
-      const result = await model.generateContent(prompt);
+      const result = await chat.sendMessage(prompt);
       
       // Get the response text
       const response = await result.response;
@@ -92,7 +102,15 @@ function App() {
       
       console.log("API Response:", text); // Log the response for debugging
       
+      // Update chat history with the new exchange
+      setChatHistory(prevHistory => [
+        ...prevHistory,
+        { role: "user", parts: [{ text: prompt }] },
+        { role: "model", parts: [{ text: text }] }
+      ]);
+      
       setAnswer(text);
+      setQuestion(""); // Clear the input for the next message
     } catch (error) {
       // More detailed error logging
       console.error("API Error:", error);
@@ -103,10 +121,35 @@ function App() {
     setGeneratingAnswer(false);
   }
 
+  // Function to clear conversation history
+  const clearConversation = () => {
+    setChatHistory([]);
+    setAnswer("");
+    setQuestion("");
+  };
+
   return (
     <>
-      <div className="bg-gradient-to-r from-emerald-900 via-teal-800 to-blue-900 h-screen p-6 flex flex-col justify-center items-center text-white">
+      <div className="bg-gradient-to-r from-emerald-900 via-teal-800 to-blue-900 min-h-screen p-6 flex flex-col justify-center items-center text-white">
         <div className="flex flex-col items-center overflow-y-auto w-full overflow-x-hidden">
+          {/* Display conversation history */}
+          {chatHistory.length > 0 && (
+            <div className="w-full md:w-4/5 lg:w-3/4 xl:w-2/3 mb-6">
+              {chatHistory.map((message, index) => (
+                <div 
+                  key={index} 
+                  className={`my-2 p-4 rounded-lg ${
+                    message.role === "user" 
+                      ? "bg-teal-800 text-white ml-auto mr-2 max-w-[80%]" 
+                      : "bg-emerald-700 text-white mr-auto ml-2 max-w-[80%]"
+                  }`}
+                >
+                  <ReactMarkdown>{message.parts[0].text}</ReactMarkdown>
+                </div>
+              ))}
+            </div>
+          )}
+          
           <form
             onSubmit={generateAnswer}
             className="w-full md:w-4/5 lg:w-3/4 xl:w-2/3 text-center rounded-lg shadow-2xl bg-teal-900 py-8 px-6 transition-all duration-500 transform hover:scale-105"
@@ -175,15 +218,15 @@ function App() {
                     }`}
                     disabled={generatingAnswer}
                   >
-                    Generate answer
+                    Send message
                   </button>
-                  {answer && (
+                  {chatHistory.length > 0 && (
                     <button
                       type="button"
-                      onClick={handleEditMessage}
-                      className="bg-blue-600 text-white py-3 px-6 rounded-md shadow-md hover:bg-blue-700 transition-all duration-300"
+                      onClick={clearConversation}
+                      className="bg-red-600 text-white py-3 px-6 rounded-md shadow-md hover:bg-red-700 transition-all duration-300"
                     >
-                      Edit message
+                      New conversation
                     </button>
                   )}
                 </>
@@ -191,15 +234,7 @@ function App() {
             </div>
           </form>
           
-          {/* Conditional Rendering for ReactMarkdown */}
-          {answer && !isEditing && (
-            <div className="w-full md:w-4/5 lg:w-3/4 xl:w-2/3 text-center rounded-lg bg-teal-900 my-6 shadow-2xl transition-all duration-500 transform hover:scale-105">
-              <div className="p-4">
-                <ReactMarkdown>{answer}</ReactMarkdown>
-                <ShareButtons answer={answer} />
-              </div>
-            </div>
-          )}
+          {/* We don't need the separate answer display anymore since we're showing the conversation history */}
           <Footer />
         </div>
       </div>
